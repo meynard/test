@@ -100,7 +100,6 @@ class Db {
     $mysqli = self::$mysqli;
 
     $sql = "DELETE FROM {$table} ";
-    $sql_set_fields = null;
     $a_params = [''];
 
     $sql .= " WHERE {$pkey} = ?";
