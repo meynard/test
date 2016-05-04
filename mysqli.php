@@ -9,6 +9,31 @@ class Db {
     self::$mysqli = $mysqli;
   }
 
+  private static function mysqli_prepare($sql) {
+    if (!($stmt = self::$mysqli->prepare($sql))) {
+        echo "Prepare failed: (" . self::$mysqli->errno . ") " . self::$mysqli->error;
+    }
+    return $stmt;
+  }
+
+  private static function mysqli_bind_param($stmt, $a_params) {
+    if (!($result = call_user_func_array([$stmt, 'bind_param'], $a_params))) {
+        echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
+    }
+    return $result;
+  }
+
+  private static function mysqli_execute($sql, $params) {
+    $stmt = self::mysqli_prepare($sql);
+    if ($stmt) {
+      if (self::mysqli_bind_param($stmt, $params)) {
+        if (!$stmt->execute()) {
+            echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
+        }
+      }
+    }
+  }
+
   static function buildSql($sql, $params) {
     $mysqli = self::$mysqli;
     $func = function($value) use ($mysqli) {
@@ -19,7 +44,9 @@ class Db {
 
     $params = array_map($func, $params);
     array_unshift($params, str_replace('?', "'%s'", $sql));
-    return call_user_func_array('sprintf', $params);
+    $_sql_ = call_user_func_array('sprintf', $params);
+    echo "\nExecuted sql: {$_sql_}";
+    return $_sql_;
   }
 
   static function insert($table, $data) {
@@ -35,24 +62,11 @@ class Db {
     }
     $sql .= implode(", ", $sql_set_fields);
 
-    if (!($stmt = $mysqli->prepare($sql))) {
-        echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
-    }
-
-    if ($stmt) {
-      if (!call_user_func_array([$stmt, 'bind_param'], $a_params)) {
-          echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
-      }
-
-      if (!$stmt->execute()) {
-          echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
-      }
-    }
+    self::mysqli_execute($sql, $a_params);
 
     array_shift($a_params);
     $_sql_ = self::buildSql($sql, $a_params);
 
-    echo "\nExecuted sql: {$_sql_}";
     return $mysqli->insert_id;
   }
 
@@ -74,23 +88,10 @@ class Db {
     $a_params[0] .= 's';
     $a_params[] = & $data[$pkey];
 
-    if (!($stmt = $mysqli->prepare($sql))) {
-        echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
-    }
-
-    if ($stmt) {
-      if (!call_user_func_array([$stmt, 'bind_param'], $a_params)) {
-          echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
-      }
-      if (!$stmt->execute()) {
-          echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
-      }
-    }
+    self::mysqli_execute($sql, $a_params);
 
     array_shift($a_params);
     $_sql_ = self::buildSql($sql, $a_params);
-
-    echo "\nExecuted sql: {$_sql_}";
   }
 
   static function delete($table, $pkey, $data) {
@@ -104,26 +105,13 @@ class Db {
     $a_params[0] .= 's';
     $a_params[] = & $data[$pkey];
 
-    if (!($stmt = $mysqli->prepare($sql))) {
-        echo "Prepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
-    }
-
-    if ($stmt) {
-      if (!call_user_func_array([$stmt, 'bind_param'], $a_params)) {
-          echo "Binding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
-      }
-      if (!$stmt->execute()) {
-          echo "Execute failed: (" . $stmt->errno . ") " . $stmt->error;
-      }
-    }
+    self::mysqli_execute($sql, $a_params);
 
     array_shift($a_params);
     $_sql_ = self::buildSql($sql, $a_params);
-
-    echo "\nExecuted sql: {$_sql_}";
   }
 
-  static function execute() {
+  static function run() {
     $mysqli = self::$mysqli;
 
     /* Non-prepared statement */
@@ -163,7 +151,7 @@ class Db {
 
 $db = new Db(array());
 
-Db::execute();
+Db::run();
 
 $id = Db::insert('users', [
   'username' => "xem's",
