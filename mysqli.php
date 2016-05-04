@@ -121,30 +121,25 @@ class Db {
     }
 
     /* Non-prepared statement */
-    if (!$mysqli->query("DROP TABLE IF EXISTS test") || !$mysqli->query("CREATE TABLE test(id INT, description VARCHAR(50))")) {
+    if (!$mysqli->query("DROP TABLE IF EXISTS users") || !$mysqli->query("CREATE TABLE users(id INT UNSIGNED NOT NULL AUTO_INCREMENT PRIMARY KEY, username VARCHAR(50), password VARCHAR(50))")) {
         echo "\nTable creation failed: (" . $mysqli->errno . ") " . $mysqli->error;
     }
 
     /* Prepared statement, stage 1: prepare */
-    if (!($stmt = $mysqli->prepare("INSERT INTO test(id, description) VALUES (?, ?)"))) {
+    if (!($stmt = $mysqli->prepare("INSERT INTO users(id, username, password) VALUES (?, ?, ?)"))) {
         echo "\nPrepare failed: (" . $mysqli->errno . ") " . $mysqli->error;
     }
 
-    $id = null;
-    $description = null;
+    $id = 1;
+    $username = 'root';
+    $password = 'secret';
 
-    if (!$stmt->bind_param("is", $id, $description)) {
+    if (!$stmt->bind_param("is", $id, $username, $password)) {
         echo "\nBinding parameters failed: (" . $stmt->errno . ") " . $stmt->error;
     }
 
-    for($i=0; $i < 10; $i++) {
-      /* Prepared statement, stage 2: bind and execute */
-      $id = $i + 1;
-      $description = "record #{$id}";
-
-      if (!$stmt->execute()) {
-          echo "\nExecute failed: (" . $stmt->errno . ") " . $stmt->error;
-      }
+    if (!$stmt->execute()) {
+      echo "\nExecute failed: (" . $stmt->errno . ") " . $stmt->error;
     }
   }
 }
