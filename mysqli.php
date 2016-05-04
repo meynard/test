@@ -1,3 +1,5 @@
+<?php
+
 class Db {
   private static $mysqli;
   function __construct($config) {
