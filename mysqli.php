@@ -1,5 +1,7 @@
 <?php
 
+// upgrade from mysql to mysqli
+
 class Db {
   static $mysqli;
   static $num_rows;
